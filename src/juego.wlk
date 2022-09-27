@@ -35,6 +35,12 @@ object juego {
 		0.randomUpTo(game.height())
 	)
 	
+	method terminar(){
+		game.clear()
+		game.addVisual(mario)
+		game.say(mario,"PERDI")	
+	}
+	
 }
 
 
@@ -51,6 +57,9 @@ object mario {
 	
 	method perderVida() {
 		vidas -=1
+		if(vidas == 0){
+			juego.terminar()
+		}
 	}
 	method vidas() = vidas
 	
@@ -74,18 +83,29 @@ class Invasor {
 	method aparecer(){
 		position = juego.posicionAleatoria()
 		game.addVisual(self)
-		self.moverseAleatoriamente()
-		game.schedule(5000,{self.desaparecer()})	
+		self.perseguirAMario()
+		game.schedule(10000,{self.desaparecer()})	
 	}
 	
-	method moverseAleatoriamente(){}
+	method perseguirAMario(){
+		game.onTick(1000,"acercarse",{self.darUnPaso(mario.position())})
+	}
+	
+	method darUnPaso(destino){
+		position = game.at(
+			position.x() + (destino.x()-position.x())/2,
+			position.y() + (destino.y()- position.y())/2
+		)
+	}
 	
 	method position() = position
 	method image() = "invasor.png"
 	
 	method desaparecer() {
 		if(game.hasVisual(self))
-			game.removeVisual(self) 
+			game.removeVisual(self)
+		game.removeTickEvent("acercarse")
+		
 	}
 }
 
@@ -99,9 +119,11 @@ class Moneda {
 		mario.aumentar(valor)
 		game.say(mario,mario.puntaje().toString())
 		game.removeVisual(self)
+		juego.generarMoneda(valor)
 		juego.generarMoneda(valor*2)
 	}
-	 
+	
+	method text() = valor.toString()
 	method image() = image
 	method animarse(){}
 	method position() = position
