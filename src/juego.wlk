@@ -5,7 +5,7 @@ object juego {
 	method iniciar() {
 		
 		game.width(20)
-		game.height(14)
+		game.height(11)
 		game.addVisualCharacter(mario)
 		
 		
@@ -14,11 +14,20 @@ object juego {
 		self.generarIvasores()
 		self.generarMonedas()
 //		game.schedule(20000,{game.removeTickEvent("aparece invasor")})
-		keyboard.enter().onPressDo({game.removeTickEvent("aparece invasor")})
+		keyboard.enter().onPressDo({
+			game.removeTickEvent("aparece invasor")
+			game.removeTickEvent("aparece invasor despistado")
+		})
+		
+		keyboard.space().onPressDo({
+			mario.dispara()
+		})
+		
 		
 	}
 	method generarIvasores() {
-		game.onTick(1000,"aparece invasor",{new Invasor().aparecer()}) 
+		game.onTick(2000,"aparece invasor",{new Invasor().aparecer()}) 
+		game.onTick(2000,"aparece invasor despistado",{new InvasorDespistado().aparecer()}) 
 	}
 	
 	method generarMonedas() {
@@ -67,7 +76,58 @@ object mario {
 //	method position(nueva) {
 //		position = nueva
 //	}
+
+	method dispara(){
+		const bola = new BolaFuego(position = position.right(1))
+		game.addVisual(bola)
+		bola.desplazarse()
+		
+	}
 	
+	method teChocoLaBola(){
+		self.disminuirPuntos()
+	}
+	
+	method disminuirPuntos() {
+		puntos = puntos - 100 
+	}
+	
+	
+	
+}
+
+class BolaFuego {
+	var position
+	method image() = "bola.png"
+	
+	method position() = position
+	
+	method desplazarse(){
+		game.onCollideDo(self,{algo=>algo.teChocoLaBola()})
+		game.onTick(250,"bola",{self.moverseDerecha()})
+	}
+	method moverseDerecha() {
+		position = position.right(1)
+		if(position.x() > game.width()){
+			game.removeTickEvent("bola")
+			game.removeVisual(self)
+		}
+	}
+	method teChocoLaBola(){}
+	method teAgarroMario(){}
+	
+}
+
+class InvasorDespistado inherits Invasor{
+	
+	override method image() = "fruta1.png"
+	
+	override method darUnPaso(destino){
+		position = game.at(
+			position.x() + 1,
+			position.y() - 1 
+		)
+	}
 	
 }
 
@@ -102,10 +162,15 @@ class Invasor {
 	method image() = "invasor.png"
 	
 	method desaparecer() {
-		if(game.hasVisual(self))
+		if(game.hasVisual(self)){
 			game.removeVisual(self)
-		game.removeTickEvent("acercarse")
+		    game.removeTickEvent("acercarse")
+		}
+	}
 		
+
+	method teChocoLaBola(){
+		self.desaparecer()
 	}
 }
 
@@ -127,4 +192,6 @@ class Moneda {
 	method image() = image
 	method animarse(){}
 	method position() = position
+	
+	method teChocoLaBola(){}
 }
